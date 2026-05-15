@@ -32,8 +32,8 @@ func TestModulateBitsPhaseContinuous(t *testing.T) {
 
 	for i := 1; i < len(samples); i++ {
 		delta := math.Abs(float64(samples[i] - samples[i-1]))
-		if delta > 0.25 {
-			t.Fatalf("adjacent delta[%d] = %f, want <= 0.25", i, delta)
+		if delta > 0.12 {
+			t.Fatalf("adjacent delta[%d] = %f, want <= 0.12", i, delta)
 		}
 	}
 }

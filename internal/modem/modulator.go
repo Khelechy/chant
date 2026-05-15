@@ -11,15 +11,17 @@ const (
 	// DefaultSampleRate is the MVP sample rate.
 	DefaultSampleRate = 48000
 	// SymbolRate is the MVP symbol rate in baud.
-	SymbolRate = 100
+	SymbolRate = 250
 	// DefaultSamplesPerSymbol is the number of samples in each symbol window.
 	DefaultSamplesPerSymbol = DefaultSampleRate / SymbolRate
 	// DefaultF0 is the frequency used for a zero bit.
-	DefaultF0 = 1500.0
+	DefaultF0 = 1200.0
 	// DefaultF1 is the frequency used for a one bit.
-	DefaultF1 = 2500.0
+	DefaultF1 = 1800.0
 	// Amplitude is the modulator output amplitude.
-	Amplitude = 0.6
+	Amplitude = 0.4
+	// EdgeRampFraction applies a small raised-cosine ramp at symbol edges to reduce harsh transitions.
+	EdgeRampFraction = 0.1
 )
 
 // Modulator emits phase-continuous 2-FSK symbols.
@@ -50,6 +52,10 @@ func (m *Modulator) ModulateBits(bits []bool) []float32 {
 	}
 
 	samples := make([]float32, 0, len(bits)*m.SamplesPerSymbol)
+	rampSamples := int(float64(m.SamplesPerSymbol) * EdgeRampFraction)
+	if rampSamples < 1 {
+		rampSamples = 1
+	}
 	for _, bit := range bits {
 		frequency := m.F0
 		if bit {
@@ -57,7 +63,8 @@ func (m *Modulator) ModulateBits(bits []bool) []float32 {
 		}
 		phaseStep := 2 * math.Pi * frequency / float64(m.SampleRate)
 		for i := 0; i < m.SamplesPerSymbol; i++ {
-			samples = append(samples, float32(Amplitude*math.Sin(m.phase)))
+			envelope := edgeEnvelope(i, m.SamplesPerSymbol, rampSamples)
+			samples = append(samples, float32(Amplitude*envelope*math.Sin(m.phase)))
 			m.phase += phaseStep
 			if m.phase >= 2*math.Pi {
 				m.phase = math.Mod(m.phase, 2*math.Pi)
@@ -104,4 +111,20 @@ func bitsToBytes(bits []bool) []byte {
 		out[i] = value
 	}
 	return out
+}
+
+func edgeEnvelope(index, samplesPerSymbol, rampSamples int) float64 {
+	if rampSamples <= 0 || samplesPerSymbol <= 2*rampSamples {
+		return 1
+	}
+	if index < rampSamples {
+		position := float64(index+1) / float64(rampSamples+1)
+		return 0.5 - 0.5*math.Cos(math.Pi*position)
+	}
+	if index >= samplesPerSymbol-rampSamples {
+		remaining := samplesPerSymbol - index
+		position := float64(remaining) / float64(rampSamples+1)
+		return 0.5 - 0.5*math.Cos(math.Pi*position)
+	}
+	return 1
 }

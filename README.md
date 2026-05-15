@@ -148,12 +148,14 @@ nonce(12) || ciphertext || tag(16)
 - Sample rate: 48000 Hz
 - Channels: mono
 - WAV sample format: signed 16-bit PCM
-- Symbol rate: 100 baud
-- Samples per symbol: 480
-- Bit 0 frequency: 1500 Hz
-- Bit 1 frequency: 2500 Hz
-- Amplitude: 0.6
+- Symbol rate: 250 baud
+- Samples per symbol: 192
+- Bit 0 frequency: 1200 Hz
+- Bit 1 frequency: 1800 Hz
+- Amplitude: 0.4
 - Phase continuity: preserved across symbol boundaries
+
+The modulator also applies a light raised-cosine edge ramp within each symbol to reduce the harshness of frequency transitions during playback.
 
 ## Limitations
 

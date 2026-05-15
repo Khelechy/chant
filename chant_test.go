@@ -9,6 +9,7 @@ import (
 	"testing"
 	"testing/quick"
 
+	"github.com/khelechy/chant/internal/modem"
 	"github.com/khelechy/chant/internal/wavio"
 )
 
@@ -85,6 +86,21 @@ func TestRoundTripWrongKey(t *testing.T) {
 
 	if _, err := DecodeMessage(keyB, samples); err == nil {
 		t.Fatal("DecodeMessage() error = nil, want failure")
+	}
+}
+
+func TestThirtyTwoByteMessageDurationUnderFifteenSeconds(t *testing.T) {
+	key := fixedTestKey()
+	msg := []byte("12345678901234567890123456789012")
+
+	samples, err := EncodeMessage(key, msg)
+	if err != nil {
+		t.Fatalf("EncodeMessage() error = %v", err)
+	}
+
+	durationSeconds := float64(len(samples)) / float64(modem.DefaultSampleRate)
+	if durationSeconds >= 15 {
+		t.Fatalf("duration = %.2fs, want < 15s", durationSeconds)
 	}
 }
 
