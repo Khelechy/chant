@@ -1,0 +1,47 @@
+# Binaries for programs and plugins
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test binary, build with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Dependency directories (remove the comment below if you use Go modules)
+# vendor/
+
+# Go workspace file
+*.code-workspace
+
+# IDE/editor specific files
+.idea/
+.vscode/
+*.swp
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# MacOS specific files
+.DS_Store
+
+# Log files
+*.log
+
+# Environment variables
+.env
+config.yaml
+mise.local.toml
+
+# Build directories
+bin/ 
+
+# wav files
+*.wav
