@@ -1,6 +1,6 @@
 # CHANT
 
-CHANT (Cryptographic Hidden Audio Network Transport) is a Go library and CLI that encodes encrypted text as audio. The output WAV sounds like a two-tone modem chirp or R2-D2-style screech. A receiver reads that audio and decodes it back to the original plaintext.
+CHANT (Cryptographic Hidden Audio/Acoustic Network Transport) is a Go library and CLI that encodes encrypted text as audio. The output WAV sounds like a two-tone modem chirp or R2-D2-style screech. A receiver reads that audio and decodes it back to the original plaintext.
 
 The MVP is file-based only: it writes and reads 48 kHz mono 16-bit PCM WAV files and does not attempt live microphone capture or speaker playback.
 
