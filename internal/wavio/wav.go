@@ -2,7 +2,9 @@
 package wavio
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/go-audio/audio"
@@ -68,7 +70,17 @@ func ReadWAV(path string) (samples []float32, sampleRate int, err error) {
 		}
 	}()
 
-	decoder := wav.NewDecoder(file)
+	return ReadWAVReader(file)
+}
+
+// ReadWAVBytes reads WAV data from memory.
+func ReadWAVBytes(data []byte) ([]float32, int, error) {
+	return ReadWAVReader(bytes.NewReader(data))
+}
+
+// ReadWAVReader reads mono 16-bit PCM and returns float32 samples plus sample rate.
+func ReadWAVReader(reader io.ReadSeeker) (samples []float32, sampleRate int, err error) {
+	decoder := wav.NewDecoder(reader)
 	if !decoder.IsValidFile() {
 		return nil, 0, fmt.Errorf("chant: invalid wav file: %w", errs.ErrWAVFormat)
 	}

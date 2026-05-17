@@ -45,7 +45,7 @@ func TestRoundTrip(t *testing.T) {
 				t.Fatalf("sampleRate = %d, want 48000", sampleRate)
 			}
 
-			got, err := DecodeMessage(key, readSamples)
+			got, err := DecodeMessageWithSampleRate(key, readSamples, sampleRate)
 			if err != nil {
 				t.Fatalf("DecodeMessage() error = %v", err)
 			}

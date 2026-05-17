@@ -34,7 +34,34 @@ func EncodeMessage(key [32]byte, plaintext []byte) ([]float32, error) {
 
 // DecodeMessage runs demodulate -> unframe -> FEC decode -> decrypt.
 func DecodeMessage(key [32]byte, samples []float32) ([]byte, error) {
-	demod := modem.NewDemodulator(modem.DefaultSampleRate)
+	return DecodeMessageWithSampleRate(key, samples, modem.DefaultSampleRate)
+}
+
+// ExtractEncryptedMessage runs demodulate -> unframe -> FEC decode and returns
+// the encrypted blob carried by CHANT frames: nonce(12) || ciphertext || tag(16).
+func ExtractEncryptedMessage(samples []float32) ([]byte, error) {
+	return ExtractEncryptedMessageWithSampleRate(samples, modem.DefaultSampleRate)
+}
+
+// DecodeMessageWithSampleRate runs demodulate -> unframe -> FEC decode -> decrypt
+// using the provided sample rate for demodulation.
+func DecodeMessageWithSampleRate(key [32]byte, samples []float32, sampleRate int) ([]byte, error) {
+	blob, err := ExtractEncryptedMessageWithSampleRate(samples, sampleRate)
+	if err != nil {
+		return nil, err
+	}
+
+	plaintext, err := DecryptMessageBlob(key, blob)
+	if err != nil {
+		return nil, err
+	}
+	return plaintext, nil
+}
+
+// ExtractEncryptedMessageWithSampleRate runs demodulate -> unframe -> FEC decode
+// using the provided sample rate and returns the encrypted CHANT blob.
+func ExtractEncryptedMessageWithSampleRate(samples []float32, sampleRate int) ([]byte, error) {
+	demod := modem.NewDemodulator(sampleRate)
 	framed, err := demod.Demodulate(samples)
 	if err != nil {
 		return nil, fmt.Errorf("chant: demodulate message: %w", err)
@@ -49,7 +76,12 @@ func DecodeMessage(key [32]byte, samples []float32) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("chant: fec decode message: %w", err)
 	}
+	return blob, nil
+}
 
+// DecryptMessageBlob decrypts a CHANT encrypted blob of the form
+// nonce(12) || ciphertext || tag(16).
+func DecryptMessageBlob(key [32]byte, blob []byte) ([]byte, error) {
 	plaintext, err := chantcrypto.Decrypt(key, blob)
 	if err != nil {
 		return nil, fmt.Errorf("chant: decrypt message: %w", err)

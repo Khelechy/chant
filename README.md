@@ -22,6 +22,8 @@ chant/
 ├── cmd/
 │   └── chant/
 │       └── main.go
+│   └── chant_server/
+│       └── main.go
 └── internal/
     ├── crypto/
     ├── errs/
@@ -98,6 +100,14 @@ Decode to a file:
 ```bash
 chant decode --key <HEX> --input out.wav --output message.txt
 ```
+
+Run the REST demodulation server:
+
+```bash
+go run ./cmd/chant_server --addr :8080
+```
+
+The server accepts a multipart `POST` to `/v1/decode` with an `audio` WAV upload and returns the encrypted CHANT blob as base64 so mobile clients can decrypt locally without sending their key to the server.
 
 ## Protocol stack
 

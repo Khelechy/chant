@@ -41,3 +41,21 @@ func TestDemodulatePacketExtractsFrame(t *testing.T) {
 		t.Fatalf("Demodulate() = %x, want %x", got, framed)
 	}
 }
+
+func TestDemodulatePacketWithLeadingSampleOffset(t *testing.T) {
+	mod := NewModulator(DefaultSampleRate)
+	demod := NewDemodulator(DefaultSampleRate)
+	framed := frame.Frame([]byte("hello chant"), 11)
+
+	samples := mod.ModulatePacket(framed)
+	offsetSamples := append(make([]float32, 73), samples...)
+
+	got, err := demod.Demodulate(offsetSamples)
+	if err != nil {
+		t.Fatalf("Demodulate() error = %v", err)
+	}
+
+	if !bytes.Equal(got, framed) {
+		t.Fatalf("Demodulate() = %x, want %x", got, framed)
+	}
+}

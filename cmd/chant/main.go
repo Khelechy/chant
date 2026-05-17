@@ -115,11 +115,11 @@ func newDecodeCmd() *cobra.Command {
 				return err
 			}
 
-			samples, _, err := wavio.ReadWAV(inputPath)
+			samples, sampleRate, err := wavio.ReadWAV(inputPath)
 			if err != nil {
 				return err
 			}
-			plaintext, err := chant.DecodeMessage(key, samples)
+			plaintext, err := chant.DecodeMessageWithSampleRate(key, samples, sampleRate)
 			if err != nil {
 				return err
 			}

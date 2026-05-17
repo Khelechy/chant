@@ -39,8 +39,22 @@ func NewDemodulator(sampleRate int) *Demodulator {
 
 // Demodulate runs Goertzel detection per symbol, finds the sync word, and returns the framed bytes.
 func (d *Demodulator) Demodulate(samples []float32) ([]byte, error) {
-	// TODO: Add symbol timing recovery for non-aligned captures in a later milestone.
-	bits := d.demodulateBits(samples)
+	for offset := 0; offset < d.SamplesPerSymbol && offset < len(samples); offset++ {
+		framed, err := d.demodulateAtOffset(samples, offset)
+		if err == nil {
+			return framed, nil
+		}
+	}
+
+	return nil, fmt.Errorf("chant: locate sync word in samples: %w", errs.ErrSyncNotFound)
+}
+
+func (d *Demodulator) demodulateAtOffset(samples []float32, offset int) ([]byte, error) {
+	if offset < 0 || offset >= len(samples) {
+		return nil, fmt.Errorf("chant: invalid symbol offset: %w", errs.ErrInvalidLength)
+	}
+
+	bits := d.demodulateBits(samples[offset:])
 	syncPattern := syncWordBits()
 
 	for start := 0; start+minimumFrameBitCount <= len(bits); start++ {
