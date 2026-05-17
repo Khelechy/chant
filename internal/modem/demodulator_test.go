@@ -59,3 +59,26 @@ func TestDemodulatePacketWithLeadingSampleOffset(t *testing.T) {
 		t.Fatalf("Demodulate() = %x, want %x", got, framed)
 	}
 }
+
+func TestDemodulatePacketSkipsFalseSyncWithBadCRC(t *testing.T) {
+	mod := NewModulator(DefaultSampleRate)
+	demod := NewDemodulator(DefaultSampleRate)
+	want := frame.Frame([]byte("hello chant"), 11)
+
+	corrupted := append([]byte(nil), want...)
+	corrupted[len(corrupted)-1] ^= 0x01
+
+	bits := append(frame.PreambleBits(), bytesToBits(corrupted)...)
+	bits = append(bits, frame.PreambleBits()...)
+	bits = append(bits, bytesToBits(want)...)
+	samples := mod.ModulateBits(bits)
+
+	got, err := demod.Demodulate(samples)
+	if err != nil {
+		t.Fatalf("Demodulate() error = %v", err)
+	}
+
+	if !bytes.Equal(got, want) {
+		t.Fatalf("Demodulate() = %x, want %x", got, want)
+	}
+}

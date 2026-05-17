@@ -13,31 +13,84 @@ class ChantMobileApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const base = Color(0xFF102A43);
-    const accent = Color(0xFFF0B429);
+    const panel = Color(0xFF141A12);
+    const surface = Color(0xFF1E281A);
+    const chrome = Color(0xFF32402A);
+    const accent = Color(0xFF9FB36B);
+    const warning = Color(0xFFE1B866);
+    const text = Color(0xFFD6DEC8);
 
     return MaterialApp(
       title: 'chant_mobile',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: accent, brightness: Brightness.light),
-        scaffoldBackgroundColor: const Color(0xFFF3EFE4),
+        colorScheme: const ColorScheme.dark(
+          primary: accent,
+          secondary: warning,
+          surface: surface,
+          onPrimary: panel,
+          onSecondary: panel,
+          onSurface: text,
+          error: Color(0xFFE27D60),
+        ),
+        scaffoldBackgroundColor: panel,
+        dividerColor: chrome,
         useMaterial3: true,
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: const Color(0xFF11160F),
+          labelStyle: const TextStyle(color: text),
+          hintStyle: TextStyle(color: text.withValues(alpha: 0.55)),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: chrome),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: chrome),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: accent, width: 1.4),
+          ),
+        ),
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(
+            backgroundColor: accent,
+            foregroundColor: panel,
+            disabledBackgroundColor: chrome,
+            disabledForegroundColor: text.withValues(alpha: 0.5),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            textStyle: const TextStyle(fontWeight: FontWeight.w700, letterSpacing: 0.8),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+          ),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: warning,
+            side: const BorderSide(color: chrome),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            textStyle: const TextStyle(fontWeight: FontWeight.w700, letterSpacing: 0.8),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+          ),
+        ),
         textTheme: const TextTheme(
           headlineMedium: TextStyle(
-            fontSize: 28,
+            fontSize: 30,
             fontWeight: FontWeight.w800,
-            color: base,
+            letterSpacing: 1.2,
+            color: text,
           ),
           titleMedium: TextStyle(
-            fontSize: 16,
+            fontSize: 14,
             fontWeight: FontWeight.w700,
-            color: base,
+            letterSpacing: 1.3,
+            color: warning,
           ),
           bodyMedium: TextStyle(
             fontSize: 14,
             height: 1.45,
-            color: Color(0xFF243B53),
+            color: text,
           ),
         ),
       ),
@@ -269,139 +322,184 @@ class _ChantListenerPageState extends State<ChantListenerPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final fileLabel = _wavPath == null ? 'No WAV file selected yet.' : _basename(_wavPath!);
+    final isWide = MediaQuery.of(context).size.width >= 920;
 
     return Scaffold(
-      body: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF102A43), Color(0xFF243B53), Color(0xFFF0B429)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+      body: SafeArea(
+        child: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: const BoxDecoration(
+            color: Color(0xFF141A12),
           ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 720),
-                child: Card(
-                  elevation: 12,
-                  color: const Color(0xFFF7F3E9),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Server-backed CHANT listener', style: theme.textTheme.headlineMedium),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Record or select a WAV, send it to the CHANT server for demodulation, and decrypt the returned encrypted blob locally on the phone.',
-                          style: theme.textTheme.bodyMedium,
-                        ),
-                        const SizedBox(height: 24),
-                        const _SectionTitle(title: 'Connection'),
-                        TextField(
-                          controller: _serverController,
-                          decoration: const InputDecoration(
-                            labelText: 'Server URL',
-                            hintText: 'http://10.0.2.2:8080/v1/decode',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: _keyController,
-                          decoration: const InputDecoration(
-                            labelText: 'CHANT key (hex)',
-                            hintText: '64-character hex key',
-                            border: OutlineInputBorder(),
-                          ),
-                          autocorrect: false,
-                          enableSuggestions: false,
-                        ),
-                        const SizedBox(height: 20),
-                        const _SectionTitle(title: 'WAV source'),
+          child: Stack(
+            children: [
+              const Positioned.fill(child: _TacticalBackdrop()),
+              SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(18, 18, 18, 28),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 640),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _Header(status: _status, isBusy: _isBusy, isRecording: _isRecording),
+                      const SizedBox(height: 18),
+                      if (isWide)
                         Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(
-                              child: FilledButton.icon(
-                                onPressed: _isBusy ? null : _toggleRecording,
-                                icon: Icon(_isRecording ? Icons.stop_circle_outlined : Icons.mic_none_outlined),
-                                label: Text(_isRecording ? 'Stop recording' : 'Record WAV'),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: OutlinedButton.icon(
-                                onPressed: _isBusy || _isRecording ? null : _pickWavFile,
-                                icon: const Icon(Icons.audio_file_outlined),
-                                label: const Text('Pick WAV'),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        Text(fileLabel, style: theme.textTheme.titleMedium),
-                        const SizedBox(height: 20),
-                        SizedBox(
-                          width: double.infinity,
-                          child: FilledButton.icon(
-                            onPressed: _isBusy || _isRecording ? null : _sendToServer,
-                            icon: _isBusy
-                                ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
-                                  )
-                                : const Icon(Icons.cloud_upload_outlined),
-                            label: Text(_isBusy ? 'Working...' : 'Send to server and decrypt'),
-                          ),
-                        ),
-                        if (_status != null) ...[
-                          const SizedBox(height: 16),
-                          Text(_status!, style: theme.textTheme.bodyMedium),
-                        ],
-                        if (_serverResponse != null) ...[
-                          const SizedBox(height: 20),
-                          const _SectionTitle(title: 'Server response'),
-                          Text(
-                            'Sample rate: ${_serverResponse!.sampleRate} Hz\n'
-                            'Samples: ${_serverResponse!.sampleCount}\n'
-                            'Encrypted bytes: ${_serverResponse!.encryptedBytes}\n'
-                            'File: ${_serverResponse!.filename ?? 'uploaded.wav'}',
-                            style: theme.textTheme.bodyMedium,
-                          ),
-                        ],
-                        if (_plainText != null) ...[
-                          const SizedBox(height: 20),
-                          const _SectionTitle(title: 'Decrypted text'),
-                          DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: const Color(0xCCFFFFFF),
-                              borderRadius: BorderRadius.circular(18),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: SelectableText(
-                                _plainText!,
-                                style: theme.textTheme.bodyMedium?.copyWith(
-                                  fontFamily: 'monospace',
-                                  fontSize: 15,
+                              flex: 11,
+                              child: _ControlPanel(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const _SectionTitle(title: 'Connection uplink'),
+                                    TextField(
+                                      controller: _serverController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Server URL',
+                                        hintText: 'http://10.0.2.2:8080/v1/decode',
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    TextField(
+                                      controller: _keyController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'CHANT key (hex)',
+                                        hintText: '64-character hex key',
+                                      ),
+                                      autocorrect: false,
+                                      enableSuggestions: false,
+                                    ),
+                                    const SizedBox(height: 18),
+                                    const _SectionTitle(title: 'Acquisition'),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: FilledButton.icon(
+                                            onPressed: _isBusy ? null : _toggleRecording,
+                                            icon: Icon(_isRecording ? Icons.stop_circle_outlined : Icons.mic_none_outlined),
+                                            label: Text(_isRecording ? 'Stop recording' : 'Record WAV'),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: OutlinedButton.icon(
+                                            onPressed: _isBusy || _isRecording ? null : _pickWavFile,
+                                            icon: const Icon(Icons.audio_file_outlined),
+                                            label: const Text('Pick WAV'),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    _DataStrip(label: 'Source file', value: fileLabel),
+                                    const SizedBox(height: 18),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: FilledButton.icon(
+                                        onPressed: _isBusy || _isRecording ? null : _sendToServer,
+                                        icon: _isBusy
+                                            ? const SizedBox(
+                                                width: 16,
+                                                height: 16,
+                                                child: CircularProgressIndicator(strokeWidth: 2),
+                                              )
+                                            : const Icon(Icons.cloud_upload_outlined),
+                                        label: Text(_isBusy ? 'Processing link...' : 'Send to server and decrypt'),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
+                            const SizedBox(width: 18),
+                            Expanded(
+                              flex: 9,
+                              child: _ResultsPanel(
+                                serverResponse: _serverResponse,
+                                plainText: _plainText,
+                              ),
+                            ),
+                          ],
+                        )
+                      else ...[
+                        _ControlPanel(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const _SectionTitle(title: 'Connection uplink'),
+                              TextField(
+                                controller: _serverController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Server URL',
+                                  hintText: 'http://10.0.2.2:8080/v1/decode',
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              TextField(
+                                controller: _keyController,
+                                decoration: const InputDecoration(
+                                  labelText: 'CHANT key (hex)',
+                                  hintText: '64-character hex key',
+                                ),
+                                autocorrect: false,
+                                enableSuggestions: false,
+                              ),
+                              const SizedBox(height: 18),
+                              const _SectionTitle(title: 'Acquisition'),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: FilledButton.icon(
+                                      onPressed: _isBusy ? null : _toggleRecording,
+                                      icon: Icon(_isRecording ? Icons.stop_circle_outlined : Icons.mic_none_outlined),
+                                      label: Text(_isRecording ? 'Stop recording' : 'Record WAV'),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: OutlinedButton.icon(
+                                      onPressed: _isBusy || _isRecording ? null : _pickWavFile,
+                                      icon: const Icon(Icons.audio_file_outlined),
+                                      label: const Text('Pick WAV'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              _DataStrip(label: 'Source file', value: fileLabel),
+                              const SizedBox(height: 18),
+                              SizedBox(
+                                width: double.infinity,
+                                child: FilledButton.icon(
+                                  onPressed: _isBusy || _isRecording ? null : _sendToServer,
+                                  icon: _isBusy
+                                      ? const SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        )
+                                      : const Icon(Icons.cloud_upload_outlined),
+                                  label: Text(_isBusy ? 'Processing link...' : 'Send to server and decrypt'),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
+                        const SizedBox(height: 18),
+                        _ResultsPanel(
+                          serverResponse: _serverResponse,
+                          plainText: _plainText,
+                        ),
                       ],
-                    ),
+                    ],
                   ),
                 ),
               ),
-            ),
+            ],
           ),
         ),
       ),
@@ -427,9 +525,288 @@ class _SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: Text(title, style: Theme.of(context).textTheme.titleMedium),
+      child: Row(
+        children: [
+          Container(
+            width: 10,
+            height: 10,
+            decoration: const BoxDecoration(
+              color: Color(0xFFE1B866),
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(title.toUpperCase(), style: Theme.of(context).textTheme.titleMedium),
+        ],
+      ),
     );
   }
+}
+
+class _Header extends StatelessWidget {
+  const _Header({required this.status, required this.isBusy, required this.isRecording});
+
+  final String? status;
+  final bool isBusy;
+  final bool isRecording;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final indicatorColor = isRecording
+        ? const Color(0xFFE27D60)
+        : isBusy
+            ? const Color(0xFFE1B866)
+            : const Color(0xFF9FB36B);
+    final indicatorLabel = isRecording
+        ? 'Recording'
+        : isBusy
+            ? 'Transmitting'
+            : 'Ready';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A2117).withValues(alpha: 0.92),
+        border: Border.all(color: const Color(0xFF3D4B30)),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text('CHANT // FIELD RECEIVER', style: theme.textTheme.headlineMedium),
+              ),
+              const SizedBox(width: 12),
+              _StatusPill(label: indicatorLabel, color: indicatorColor),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Server-backed CHANT listener',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: const Color(0xFFE1B866),
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.9,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Capture or import a WAV signal, push it to the decode endpoint, and recover plaintext locally using the device-held key.',
+            style: theme.textTheme.bodyMedium,
+          ),
+          if (status != null) ...[
+            const SizedBox(height: 14),
+            _DataStrip(label: 'Status', value: status!),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ControlPanel extends StatelessWidget {
+  const _ControlPanel({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A2117).withValues(alpha: 0.9),
+        border: Border.all(color: const Color(0xFF3D4B30)),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: child,
+    );
+  }
+}
+
+class _ResultsPanel extends StatelessWidget {
+  const _ResultsPanel({required this.serverResponse, required this.plainText});
+
+  final _ServerDecodeResponse? serverResponse;
+  final String? plainText;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return _ControlPanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _SectionTitle(title: 'Telemetry'),
+          if (serverResponse == null)
+            Text(
+              'Awaiting decode response. Telemetry will populate after a successful upload.',
+              style: theme.textTheme.bodyMedium,
+            )
+          else ...[
+            _DataStrip(label: 'Sample rate', value: '${serverResponse!.sampleRate} Hz'),
+            const SizedBox(height: 10),
+            _DataStrip(label: 'Sample count', value: '${serverResponse!.sampleCount}'),
+            const SizedBox(height: 10),
+            _DataStrip(label: 'Encrypted bytes', value: '${serverResponse!.encryptedBytes}'),
+            const SizedBox(height: 10),
+            _DataStrip(label: 'File', value: serverResponse!.filename ?? 'uploaded.wav'),
+          ],
+          const SizedBox(height: 20),
+          const _SectionTitle(title: 'Recovered plaintext'),
+          Container(
+            width: double.infinity,
+            constraints: const BoxConstraints(minHeight: 220),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF10150E),
+              border: Border.all(color: const Color(0xFF3D4B30)),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: plainText == null
+                ? Text(
+                    'No plaintext recovered yet.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: const Color(0xFFD6DEC8).withValues(alpha: 0.68),
+                    ),
+                  )
+                : SelectableText(
+                    plainText!,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontFamily: 'monospace',
+                      fontSize: 15,
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DataStrip extends StatelessWidget {
+  const _DataStrip({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF10150E),
+        border: Border.all(color: const Color(0xFF3D4B30)),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: RichText(
+        text: TextSpan(
+          style: theme.textTheme.bodyMedium,
+          children: [
+            TextSpan(
+              text: '${label.toUpperCase()}  ',
+              style: const TextStyle(
+                color: Color(0xFFE1B866),
+                fontWeight: FontWeight.w700,
+                letterSpacing: 1,
+              ),
+            ),
+            TextSpan(text: value),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.16),
+        border: Border.all(color: color),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            label.toUpperCase(),
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TacticalBackdrop extends StatelessWidget {
+  const _TacticalBackdrop();
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _BackdropPainter(),
+    );
+  }
+}
+
+class _BackdropPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final basePaint = Paint()..color = const Color(0xFF141A12);
+    canvas.drawRect(Offset.zero & size, basePaint);
+
+    final gridPaint = Paint()
+      ..color = const Color(0xFF2B3425).withValues(alpha: 0.32)
+      ..strokeWidth = 1;
+    const spacing = 34.0;
+    for (double x = 0; x <= size.width; x += spacing) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
+    }
+    for (double y = 0; y <= size.height; y += spacing) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
+    }
+
+    final bandPaint = Paint()..color = const Color(0xFF89A55A).withValues(alpha: 0.08);
+    canvas.drawRect(Rect.fromLTWH(0, size.height * 0.12, size.width, size.height * 0.1), bandPaint);
+    canvas.drawRect(Rect.fromLTWH(0, size.height * 0.76, size.width, size.height * 0.08), bandPaint);
+
+    final ringPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.4
+      ..color = const Color(0xFFE1B866).withValues(alpha: 0.12);
+    canvas.drawCircle(Offset(size.width * 0.86, size.height * 0.18), 120, ringPaint);
+    canvas.drawCircle(Offset(size.width * 0.14, size.height * 0.82), 90, ringPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _ServerDecodeResponse {

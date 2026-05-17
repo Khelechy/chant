@@ -11,10 +11,13 @@ import (
 )
 
 const (
+	preambleBitsLength   = frame.PreambleSymbols
 	syncBitsLength       = 32
 	lengthBitsPerField   = 16
 	crcBitsLength        = 32
 	minimumFrameBitCount = syncBitsLength + (2 * lengthBitsPerField) + crcBitsLength
+	maxPreambleBitErrors = 6
+	maxSyncBitErrors     = 2
 )
 
 // Demodulator recovers framed bytes from 2-FSK samples.
@@ -55,21 +58,27 @@ func (d *Demodulator) demodulateAtOffset(samples []float32, offset int) ([]byte,
 	}
 
 	bits := d.demodulateBits(samples[offset:])
+	preamblePattern := frame.PreambleBits()
 	syncPattern := syncWordBits()
 
-	for start := 0; start+minimumFrameBitCount <= len(bits); start++ {
-		if !equalBits(bits[start:start+syncBitsLength], syncPattern) {
+	for start := 0; start+preambleBitsLength+minimumFrameBitCount <= len(bits); start++ {
+		if !matchesPreambleAndSync(bits, start, preamblePattern, syncPattern) {
 			continue
 		}
 
-		headerBits := bits[start : start+syncBitsLength+(2*lengthBitsPerField)]
+		frameStart := start + preambleBitsLength
+		headerBits := bits[frameStart : frameStart+syncBitsLength+(2*lengthBitsPerField)]
 		headerBytes := bitsToBytes(headerBits)
 		payloadLen := int(binary.BigEndian.Uint16(headerBytes[6:8]))
 		totalBits := minimumFrameBitCount + payloadLen*8
-		if start+totalBits > len(bits) {
+		if payloadLen < 0 || frameStart+totalBits > len(bits) {
 			continue
 		}
-		return bitsToBytes(bits[start : start+totalBits]), nil
+
+		candidate := bitsToBytes(bits[frameStart : frameStart+totalBits])
+		if _, _, err := frame.Unframe(candidate); err == nil {
+			return candidate, nil
+		}
 	}
 
 	return nil, fmt.Errorf("chant: locate sync word in samples: %w", errs.ErrSyncNotFound)
@@ -126,4 +135,33 @@ func equalBits(a, b []bool) bool {
 		}
 	}
 	return true
+}
+
+func matchesPreambleAndSync(bits []bool, start int, preamble []bool, sync []bool) bool {
+	if start < 0 || start+len(preamble)+len(sync) > len(bits) {
+		return false
+	}
+
+	preambleErrors := bitErrors(bits[start:start+len(preamble)], preamble)
+	if preambleErrors > maxPreambleBitErrors {
+		return false
+	}
+
+	syncStart := start + len(preamble)
+	syncErrors := bitErrors(bits[syncStart:syncStart+len(sync)], sync)
+	return syncErrors <= maxSyncBitErrors
+}
+
+func bitErrors(a, b []bool) int {
+	if len(a) != len(b) {
+		return len(a) + len(b)
+	}
+
+	errors := 0
+	for i := range a {
+		if a[i] != b[i] {
+			errors++
+		}
+	}
+	return errors
 }
