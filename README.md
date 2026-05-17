@@ -2,6 +2,8 @@
 
 CHANT (Cryptographic Hidden Audio Network Transport) is a Go library and CLI that encodes encrypted text as audio. The output WAV sounds like a two-tone modem chirp or R2-D2-style screech. A receiver reads that audio and decodes it back to the original plaintext.
 
+This repository also includes a Flutter mobile client that records or selects WAV audio, uploads it to a CHANT REST endpoint for demodulation, and decrypts the returned encrypted blob locally on-device.
+
 The MVP is file-based only: it writes and reads 48 kHz mono 16-bit PCM WAV files and does not attempt live microphone capture or speaker playback.
 
 ## Install
@@ -19,6 +21,7 @@ chant/
 ├── chant.go
 ├── chant_test.go
 ├── errors.go
+├── chant_mobile/
 ├── cmd/
 │   └── chant/
 │       └── main.go
@@ -109,6 +112,38 @@ go run ./cmd/chant_server --addr :8080
 
 The server accepts a multipart `POST` to `/v1/decode` with an `audio` WAV upload and returns the encrypted CHANT blob as base64 so mobile clients can decrypt locally without sending their key to the server.
 
+Quick health check:
+
+```bash
+curl http://127.0.0.1:8080/healthz
+```
+
+Quick upload test:
+
+```bash
+curl -X POST http://127.0.0.1:8080/v1/decode \
+	-F "audio=@test.wav"
+```
+
+## Mobile client
+
+The Flutter app lives in `chant_mobile/`.
+
+Typical flow:
+
+1. Generate a CHANT key.
+2. Start the REST server.
+3. Run the Flutter app.
+4. Record or pick a WAV file in the app.
+5. Upload it to `/v1/decode`.
+6. Decrypt the returned blob locally on the device with the same key.
+
+For Android emulators, use `http://10.0.2.2:8080/v1/decode` as the server URL.
+For iOS simulators, use `http://127.0.0.1:8080/v1/decode`.
+For physical phones, use your computer's LAN IP or a public tunnel URL.
+
+See `chant_mobile/README.md` for app-specific setup and usage.
+
 ## Protocol stack
 
 Encoding pipeline:
@@ -180,4 +215,4 @@ The demodulator also assumes symbol-aligned sample windows for the MVP. It perfo
 - Live audio I/O
 - Chirp modulation
 - Better FEC
-- Mobile bindings
+- Streaming upload / near-real-time mobile capture
